@@ -58,7 +58,7 @@ dockerhub_password: "your-dockerhub-password"
 4. Update your vault password in ansible/vault_pass.txt file
 
 ### Configure Ansible playbook
-###### Variables to Update:
+##### Variables to Update:
 Modify the following values in the vars section:
 
 ```yaml
