@@ -1,0 +1,132 @@
+# AWS playbook
+---
+
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars_files:
+    - group_vars/all/pass.yml
+
+  vars:
+    key_name: Meital-KeyPair             # Key used for SSH
+    region: us-east-1                    # Region 
+    image: ami-053a45fff0a704a47         # look in ec2 > ami 
+    id: "example testing"
+    instance_type: t2.micro              # Choose instance type, check AWS for pricing
+    vpc_id: subnet-0b8cac620d6179ef2
+    sec_group: sg-0cdfcaf483e7fd7d0
+
+  tasks:
+    - name: Provisioning EC2 instances
+      block:
+        - name: Start an instance with a public IP address
+          amazon.aws.ec2_instance:
+            name: "Testing-Instance"
+            key_name: "{{ key_name }}"
+            vpc_subnet_id: "{{ vpc_id }}"
+            instance_type: "{{ instance_type }}"
+            security_group: "{{ sec_group }}"
+            aws_access_key: "{{ aws_access_key }}"
+            aws_secret_key: "{{ aws_secret_key }}"
+            region: "{{ region }}"
+            network:
+              assign_public_ip: true
+            image_id: "{{ image }}"
+
+            tags:
+              Environment: Testing
+          register: ec2_instance
+    
+        - name: Wait for instance to be in running state
+          amazon.aws.ec2_instance_info:
+            aws_access_key: "{{ aws_access_key }}"
+            aws_secret_key: "{{ aws_secret_key }}"
+            region: "{{ region }}"
+            filters:
+              instance-id: "{{ ec2_instance.instance_ids[0] }}"
+          register: new_instance
+          until: new_instance.instances[0].state.name == "running" and new_instance.instances[0].public_ip_address is defined
+          retries: 10  
+          delay: 10
+        
+        - name: Save public IP for later use
+          set_fact:
+            instance_public_ip: "{{ new_instance.instances[0].public_ip_address }}"
+
+        - name: Wait for SSH to be available
+          ansible.builtin.wait_for:
+            host: "{{ instance_public_ip }}"
+            port: 22
+            delay: 10
+            timeout: 120
+            state: started
+
+        - name: Add new instance to Ansible inventory
+          add_host:
+            name: "new_ec2_instance"
+            ansible_host: "{{ instance_public_ip }}"
+            ansible_user: ec2-user
+            ansible_ssh_private_key_file: "~/.ssh/Meital-KeyPair.pem"
+
+- name: Install Packeges
+  hosts: new_ec2_instance
+  become: True
+  tasks:
+      - name: Install packeges
+        dnf:
+          name: "{{ item }}"
+          state: latest
+        loop:
+          - git
+          - python
+          - python-pip
+          - docker
+
+      - name: Start docker service , if not started
+        ansible.builtin.service:
+          name: docker
+          enabled: true
+          state: started
+      
+      - name: Add ec2-user to docker group
+        ansible.builtin.user:
+          name: ec2-user
+          groups: docker
+          append: yes
+
+      - name: Reboot the instance to apply group changes
+        ansible.builtin.reboot:
+          post_reboot_delay: 30
+
+- name: Clone ,Push to DockerHub and Run & Test the Flask App
+  hosts: new_ec2_instance
+  vars_files:
+    - group_vars/all/pass.yml
+  tasks:
+      - name: Ensure Docker is running after reboot
+        ansible.builtin.service:
+          name: docker
+          state: started
+          enabled: true
+      
+      - name: Clone a repo
+        ansible.builtin.git:
+          repo: 'https://github.com/MeitalTal/Full-CICD-Pipeline-with-AWS-Ansible.git'
+          dest: /home/ec2-user/Full-CICD-Pipeline-with-AWS-Ansible
+
+      - name: Log in to Docker Hub
+        ansible.builtin.shell: echo "{{ dockerhub_password }}" | docker login -u "{{ dockerhub_username }}" --password-stdin
+
+      - name: Build Docker image
+        ansible.builtin.shell: |
+          docker build -t "{{ dockerhub_username }}/flaskapp:latest" /home/ec2-user/Full-CICD-Pipeline-with-AWS-Ansible/src
+
+      - name: Tag Docker image
+        ansible.builtin.shell: docker tag meitaltal92/flaskapp:latest meitaltal92/flaskapp:latest
+
+      - name: Push Docker image to Docker Hub
+        ansible.builtin.shell: docker push "{{ dockerhub_username }}/flaskapp:latest"
+
+      - name: Run Flask App Container
+        ansible.builtin.shell: docker run -d --name web -p 5000:5000 "{{ dockerhub_username }}/flaskapp:latest"
