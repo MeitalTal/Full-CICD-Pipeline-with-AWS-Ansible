@@ -34,7 +34,7 @@ A pipeline using Ansible, Docker, and Jenkins to automate AWS infrastructure dep
 ### Clone the Repository
 ```sh
 git clone https://github.com/MeitalTal/Full-CICD-Pipeline-with-AWS-Ansible.git
-cd Full-CICD-Pipeline-with-AWS-Ansible/ansible
+cd Full-CICD-Pipeline-with-AWS-Ansible/
 mv ansible /home/ec2-user/ansible
 ```
 
