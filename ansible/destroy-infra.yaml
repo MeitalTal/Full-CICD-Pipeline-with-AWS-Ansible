@@ -1,0 +1,23 @@
+- name: Terminate Testing EC2 instance
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - group_vars/all/pass.yml
+  tasks:
+    - name: Find instances with a specific tag
+      amazon.aws.ec2_instance_info:
+        region: us-east-1
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        filters:
+          "tag:Environment": "Testing"
+      register: instances_found
+
+    - name: Terminate instances
+      amazon.aws.ec2_instance:
+        region: us-east-1
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        instance_ids: "{{ instances_found.instances | map(attribute='instance_id') | list }}"
+        state: absent
+      when: instances_found.instances | length > 0
