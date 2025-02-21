@@ -32,7 +32,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                agent { label 'Built-In Node' }
+                agent { label 'Production Node' }
                 script {
                     echo "Deploy to production - Ensure you're logged into DockerHub"
                     
