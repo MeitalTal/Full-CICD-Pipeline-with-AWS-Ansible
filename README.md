@@ -57,5 +57,14 @@ dockerhub_password: "your-dockerhub-password"
 3. Save the file and re-encrypt if needed.
 4. Update your vault password in ansible/vault_pass.txt file
 
+# Run the Jenkins Pipeline
+Once everything is set up, trigger the Jenkins pipeline, and it will:
+- Create a test environment
+- Run tests on the application
+- Deploy the application to production
+- Destroy the test environment after deployment
+
+
+
 
 
