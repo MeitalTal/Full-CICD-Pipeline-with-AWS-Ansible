@@ -11,6 +11,7 @@ pipeline {
 
     stages {
         stage('Build') {
+            agent { label 'Built-In Node' }
             steps {
                 script {
                     echo "Running Ansible to create testing EC2 instance"
@@ -20,6 +21,7 @@ pipeline {
         }
 
         stage('Test') {
+            agent { label 'Built-In Node' }
             steps {
                 script {
                     echo "Testing the Flask app"
@@ -30,6 +32,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
+                agent { label 'Built-In Node' }
                 script {
                     echo "Deploy to production - Ensure you're logged into DockerHub"
                     
@@ -45,7 +48,9 @@ pipeline {
     }
 
     post { 
-        always { 
+        always 
+        node('Built-In Node')
+        { 
             echo "Destroying EC2 instance"
             sh "ansible-playbook ${ANSIBLE_PLAYBOOK_DESTROY} --vault-password-file ${VAULT_PASS}"
         }
