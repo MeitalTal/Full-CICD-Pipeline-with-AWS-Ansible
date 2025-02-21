@@ -57,6 +57,21 @@ dockerhub_password: "your-dockerhub-password"
 3. Save the file and re-encrypt if needed.
 4. Update your vault password in ansible/vault_pass.txt file
 
+### Configure Ansible playbook
+###### Variables to Update:
+Modify the following values in the vars section:
+
+```yaml
+vars:
+    key_name: <Your-KeyPair-Name>         # Replace with your AWS KeyPair name
+    region: <Your-AWS-Region>             # Example: us-east-1
+    image: <Your-AMI-ID>                  # Find in EC2 > AMI
+    id: "<Your-Instance-Name>"            # A descriptive name for your instance
+    instance_type: <Your-Instance-Type>    # Example: t2.micro, check AWS pricing
+    vpc_id: <Your-Subnet-ID>              # Find in EC2 > Subnets
+    sec_group: <Your-Security-Group-ID>   # Find in EC2 > Security Groups
+```
+
 ### Run the Jenkins Pipeline
 Once everything is set up, trigger the Jenkins pipeline, and it will:
 - Create a test environment
