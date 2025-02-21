@@ -66,7 +66,6 @@ vars:
     key_name: <Your-KeyPair-Name>         # Replace with your AWS KeyPair name
     region: <Your-AWS-Region>             # Example: us-east-1
     image: <Your-AMI-ID>                  # Find in EC2 > AMI
-    id: "<Your-Instance-Name>"            # A descriptive name for your instance
     instance_type: <Your-Instance-Type>    # Example: t2.micro, check AWS pricing
     vpc_id: <Your-Subnet-ID>              # Find in EC2 > Subnets
     sec_group: <Your-Security-Group-ID>   # Find in EC2 > Security Groups
